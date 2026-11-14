@@ -23,7 +23,7 @@ class Qwen3Attention(nn.Module):
         rms_norm_eps: float = 1e-06,
         qkv_bias: bool = False,
         rope_theta: float = 10000,
-        rope_scaling: tuple | None = None,
+        rope_scaling: dict | None = None,
     ) -> None:
         super().__init__()
         tp_size = dist.get_world_size()
@@ -51,12 +51,14 @@ class Qwen3Attention(nn.Module):
             hidden_size,
             bias=False,
         )
+        if rope_scaling is not None:
+            assert rope_scaling["rope_type"] == "default"
+            rope_theta = rope_scaling["rope_theta"]
         self.rotary_emb = get_rope(
             self.head_dim,
             rotary_dim=self.head_dim,
             max_position=max_position,
             base=rope_theta,
-            rope_scaling=rope_scaling,
         )
         self.attn = Attention(
             self.num_heads,
